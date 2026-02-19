@@ -12,10 +12,17 @@
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "@hocuspocus/server": "^3.4.0",
+    "@hocuspocus/transformer": "^3.4.4",
     "@omninote/shared": "workspace:*",
-    "yjs": "^13.6.27"
+    "@tiptap/core": "^3.19.0",
+    "@tiptap/starter-kit": "^3.19.0",
+    "prosemirror-model": "^1.25.4",
+    "tiptap-markdown": "^0.9.0",
+    "yjs": "^13.6.27",
+    "jsdom": "^26.0.0"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^24.10.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

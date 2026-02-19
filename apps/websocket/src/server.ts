@@ -1,8 +1,12 @@
 import { Server } from '@hocuspocus/server';
+import { TiptapTransformer } from '@hocuspocus/transformer';
 import { WS_PORT } from '@omninote/shared';
-import {applyUpdate, encodeStateAsUpdate} from 'yjs';
 import fs from 'fs';
 import path from 'path';
+import { Editor } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import { Markdown } from 'tiptap-markdown';
+import { JSDOM } from 'jsdom';
 
 const STORAGE_DIR = './storage';
 
@@ -10,42 +14,85 @@ if (!fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR);
 }
 
+if (typeof window === 'undefined') {
+  const { window } = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+
+  const globalAny = global as any;
+  globalAny.window = window;
+  globalAny.document = window.document;
+  globalAny.Element = window.Element;
+  globalAny.Node = window.Node;
+  globalAny.HTMLElement = window.HTMLElement;
+  globalAny.DOMParser = window.DOMParser;
+  globalAny.MutationObserver = window.MutationObserver;
+
+  Object.defineProperty(globalAny, 'navigator', {
+    value: window.navigator,
+    configurable: true,
+    enumerable: true,
+    writable: true,
+  });
+}
+
+interface MarkdownStorage {
+  markdown: {
+    getMarkdown: () => string;
+  };
+}
+
+const createServerEditor = () => {
+  return new Editor({
+    extensions: [
+      StarterKit,
+      Markdown,
+    ],
+    // immediatelyRender: false,
+  });
+};
+
 const server = new Server({
   port: WS_PORT,
   name: 'OmniNote Server',
-
   debounce: 2000,
 
   async onLoadDocument(data) {
-    const filePath = path.join(STORAGE_DIR, `${data.documentName}.bin`);
+    const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
 
     if (fs.existsSync(filePath)) {
-      const buffer = fs.readFileSync(filePath);
+      console.log(`📂 Loading Markdown: ${data.documentName}.md`);
+      const markdownContent = fs.readFileSync(filePath, 'utf-8');
 
-      if (buffer.length > 0) {
-        console.log(`📂 Loading blob for: ${data.documentName} (${buffer.length} bytes)`);
+      const editor = createServerEditor();
+      editor.commands.setContent(markdownContent);
+      const json = editor.getJSON();
 
-        applyUpdate(data.document, new Uint8Array(buffer));
-      }
-    } else {
-      console.log(`🆕 Creating new document: ${data.documentName}`);
+      editor.destroy();
+
+      return TiptapTransformer.toYdoc(json, 'default', [StarterKit, Markdown]);
     }
 
-    return data.document;
+    console.log(`🆕 Creating new document: ${data.documentName}`);
+    return null;
   },
 
   async onStoreDocument(data) {
-    const filePath = path.join(STORAGE_DIR, `${data.documentName}.bin`);
+    const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
 
-    const update = encodeStateAsUpdate(data.document);
+    const json = TiptapTransformer.fromYdoc(data.document, 'default');
+    const editor = createServerEditor();
 
-    console.log(`💾 Saving blob for: ${data.documentName} (${update.length} bytes)`);
+    editor.commands.setContent(json);
 
-    fs.writeFileSync(filePath, Buffer.from(update));
+    const storage = editor.storage as unknown as MarkdownStorage;
+    const markdownOutput = storage.markdown.getMarkdown();
+
+    console.log(`💾 Saving Markdown: ${data.documentName}.md`);
+    fs.writeFileSync(filePath, markdownOutput);
+
+    editor.destroy();
   },
 });
 
-// Запускаємо
 server.listen().then(() => {
   console.log(`Hocuspocus server is running on port ${WS_PORT}`);
 });

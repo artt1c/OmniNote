@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "overrides": {
+    "yjs": "^13.6.20",
+    "prosemirror-model": "^1.23.0"
+  },
   "scripts": {
     "dev": "pnpm --parallel -r dev",
     "build": "pnpm -r build"
