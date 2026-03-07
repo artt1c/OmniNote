@@ -80,7 +80,7 @@ export const useCollaborativeEditor = (documentName: string) => {
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4 border rounded-md shadow-sm',
+        class: 'prose prose-lg max-w-none mx-auto focus:outline-none min-h-[300px] p-4',
       },
     },
   }, [provider])

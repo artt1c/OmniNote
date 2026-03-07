@@ -22,7 +22,7 @@ export function CollaborativeEditor({ documentName }: Props) {
         <div>User: {user.name}</div>
       </div>
 
-      <EditorContent className="text-black" editor={editor} />
+      <EditorContent className="text-black prose" editor={editor} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Server } from '@hocuspocus/server';
 import { TiptapTransformer } from '@hocuspocus/transformer';
+import * as Y from 'yjs';
 import { WS_PORT } from '@omninote/shared';
 import fs from 'fs';
 import path from 'path';
@@ -57,6 +58,15 @@ const server = new Server({
 
   async onLoadDocument(data) {
     const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
+    const yjsPath = path.join(STORAGE_DIR, `${data.documentName}.yjs`);
+
+    if (fs.existsSync(yjsPath)) {
+      console.log(`📂 Loading Yjs Binary: ${data.documentName}.yjs`);
+      const binary = fs.readFileSync(yjsPath);
+      const ydoc = new Y.Doc();
+      Y.applyUpdate(ydoc, binary);
+      return ydoc;
+    }
 
     if (fs.existsSync(filePath)) {
       console.log(`📂 Loading Markdown: ${data.documentName}.md`);
@@ -77,19 +87,21 @@ const server = new Server({
 
   async onStoreDocument(data) {
     const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
+    const yjsPath = path.join(STORAGE_DIR, `${data.documentName}.yjs`);
 
     const json = TiptapTransformer.fromYdoc(data.document, 'default');
     const editor = createServerEditor();
-
     editor.commands.setContent(json);
-
     const storage = editor.storage as unknown as MarkdownStorage;
     const markdownOutput = storage.markdown.getMarkdown();
 
     console.log(`💾 Saving Markdown: ${data.documentName}.md`);
     fs.writeFileSync(filePath, markdownOutput);
-
     editor.destroy();
+
+    console.log(`💾 Saving Yjs Binary: ${data.documentName}.yjs`);
+    const binary = Y.encodeStateAsUpdate(data.document);
+    fs.writeFileSync(yjsPath, Buffer.from(binary));
   },
 });
 

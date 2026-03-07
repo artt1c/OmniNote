@@ -44,7 +44,7 @@ apps/web/next-env.d.ts
 *.log
 Thumbs.db
 
-apps/websocket/storage/*.md
+apps/websocket/storage/*
 apps/websocket/database.sqlite
 apps/websocket/database.sqlite-journal
 
