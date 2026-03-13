@@ -1,0 +1,10 @@
+{
+  "name": "OmniNote",
+  "short_name": "OmniNote",
+  "description": "Collaborative, offline-first note-taking with real-time sync.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff"
+}

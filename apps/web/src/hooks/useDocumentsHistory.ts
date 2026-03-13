@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
+import { STORAGE_KEY } from '@omninote/shared';
 
 export interface StoredDocument {
   id: string;
   lastVisited: number;
 }
-
-const STORAGE_KEY = 'omninote-recent-docs';
 
 export function useDocumentsHistory() {
   const [documents, setDocuments] = useState<StoredDocument[]>([]);

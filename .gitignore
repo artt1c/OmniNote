@@ -44,7 +44,6 @@ apps/web/next-env.d.ts
 *.log
 Thumbs.db
 
-apps/websocket/storage/*
 apps/websocket/database.sqlite
 apps/websocket/database.sqlite-journal
 
@@ -53,3 +52,6 @@ dist
 /apps/websocket/node_modules
 /apps/web/node_modules
 /apps/web/.next
+
+apps/web/public/sw*
+apps/web/public/swe-worker*

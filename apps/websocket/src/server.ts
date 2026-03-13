@@ -1,110 +1,103 @@
+import 'dotenv/config';
 import { Server } from '@hocuspocus/server';
-import { TiptapTransformer } from '@hocuspocus/transformer';
+import { Database } from '@hocuspocus/extension-database';
+import { createClient } from '@supabase/supabase-js';
 import * as Y from 'yjs';
-import { WS_PORT } from '@omninote/shared';
-import fs from 'fs';
-import path from 'path';
-import { Editor } from '@tiptap/core';
-import StarterKit from '@tiptap/starter-kit';
-import { Markdown } from 'tiptap-markdown';
-import { JSDOM } from 'jsdom';
+import {
+  WS_PORT,
+  NOTES_TABLE,
+  NOTE_CONTENTS_TABLE,
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  SUPABASE_USER_ID
+} from '@omninote/shared';
 
-const STORAGE_DIR = './storage';
-
-if (!fs.existsSync(STORAGE_DIR)) {
-  fs.mkdirSync(STORAGE_DIR);
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error(
+    'Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must both be set.'
+  );
 }
 
-if (typeof window === 'undefined') {
-  const { window } = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-
-  const globalAny = global as any;
-  globalAny.window = window;
-  globalAny.document = window.document;
-  globalAny.Element = window.Element;
-  globalAny.Node = window.Node;
-  globalAny.HTMLElement = window.HTMLElement;
-  globalAny.DOMParser = window.DOMParser;
-  globalAny.MutationObserver = window.MutationObserver;
-
-  Object.defineProperty(globalAny, 'navigator', {
-    value: window.navigator,
-    configurable: true,
-    enumerable: true,
-    writable: true,
-  });
-}
-
-interface MarkdownStorage {
-  markdown: {
-    getMarkdown: () => string;
-  };
-}
-
-const createServerEditor = () => {
-  return new Editor({
-    extensions: [
-      StarterKit,
-      Markdown,
-    ],
-    // immediatelyRender: false,
-  });
-};
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const server = new Server({
   port: WS_PORT,
   name: 'OmniNote Server',
   debounce: 2000,
 
-  async onLoadDocument(data) {
-    const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
-    const yjsPath = path.join(STORAGE_DIR, `${data.documentName}.yjs`);
+  extensions: [
+    new Database({
+      async fetch({ documentName }) {
+        const { data, error } = await supabase
+          .from(NOTE_CONTENTS_TABLE)
+          .select('data')
+          .eq('note_id', documentName)
+          .single();
 
-    if (fs.existsSync(yjsPath)) {
-      console.log(`📂 Loading Yjs Binary: ${data.documentName}.yjs`);
-      const binary = fs.readFileSync(yjsPath);
-      const ydoc = new Y.Doc();
-      Y.applyUpdate(ydoc, binary);
-      return ydoc;
-    }
+        if (error) {
+          if (error.code !== 'PGRST116') {
+            console.error(`[fetch] Supabase error for "${documentName}":`, error.message);
+          }
+          return null;
+        }
 
-    if (fs.existsSync(filePath)) {
-      console.log(`📂 Loading Markdown: ${data.documentName}.md`);
-      const markdownContent = fs.readFileSync(filePath, 'utf-8');
+        const raw = data?.data;
+        if (!raw) return null;
 
-      const editor = createServerEditor();
-      editor.commands.setContent(markdownContent);
-      const json = editor.getJSON();
+        let buffer: Uint8Array;
 
-      editor.destroy();
+        if (raw instanceof Uint8Array) {
+          buffer = raw;
+        } else if (typeof raw === 'string' && raw.startsWith('\\x')) {
+          buffer = Buffer.from(raw.slice(2), 'hex');
+        } else {
+          buffer = Buffer.from(raw as any);
+        }
 
-      return TiptapTransformer.toYdoc(json, 'default', [StarterKit, Markdown]);
-    }
+        try {
+          const testDoc = new Y.Doc();
+          Y.applyUpdate(testDoc, buffer);
+          return buffer;
+        } catch (e: any) {
+          console.error(`❌ [fetch] Invalid Yjs data for "${documentName}":`, e.message);
+          return null;
+        }
+      },
 
-    console.log(`🆕 Creating new document: ${data.documentName}`);
-    return null;
-  },
+      async store({ documentName, document }) {
+        const state = Y.encodeStateAsUpdate(document);
+        const hexData = '\\x' + Buffer.from(state).toString('hex');
 
-  async onStoreDocument(data) {
-    const filePath = path.join(STORAGE_DIR, `${data.documentName}.md`);
-    const yjsPath = path.join(STORAGE_DIR, `${data.documentName}.yjs`);
+        const { error: nodeError } = await supabase.from(NOTES_TABLE).upsert(
+          {
+            id: documentName,
+            owner_id: SUPABASE_USER_ID
+          },
+          { onConflict: 'id' },
+        );
 
-    const json = TiptapTransformer.fromYdoc(data.document, 'default');
-    const editor = createServerEditor();
-    editor.commands.setContent(json);
-    const storage = editor.storage as unknown as MarkdownStorage;
-    const markdownOutput = storage.markdown.getMarkdown();
+        if (nodeError) {
+          console.error(`[store] Failed to ensure parent record for "${documentName}":`, nodeError.message);
+          return;
+        }
 
-    console.log(`💾 Saving Markdown: ${data.documentName}.md`);
-    fs.writeFileSync(filePath, markdownOutput);
-    editor.destroy();
+        const { error } = await supabase.from(NOTE_CONTENTS_TABLE).upsert({
+          note_id: documentName,
+          data: hexData,
+          updated_at: new Date().toISOString(),
+        });
 
-    console.log(`💾 Saving Yjs Binary: ${data.documentName}.yjs`);
-    const binary = Y.encodeStateAsUpdate(data.document);
-    fs.writeFileSync(yjsPath, Buffer.from(binary));
-  },
+        if (error) {
+          console.error(`[store] Failed to persist "${documentName}":`, error.message);
+          return;
+        }
+
+        console.log(`💾 Persisted state for: "${documentName}"`);
+      },
+    }),
+  ],
 });
 
 server.listen().then(() => {
-  console.log(`Hocuspocus server is running on port ${WS_PORT}`);
+  console.log(`✅ Hocuspocus server is running on port ${WS_PORT}`);
 });
