@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +15,7 @@
     "@hocuspocus/extension-database": "^3.4.4",
     "@hocuspocus/server": "3.4.4",
     "@hocuspocus/transformer": "^3.4.4",
+    "@omninote/persistence": "workspace:*",
     "@omninote/shared": "workspace:*",
     "@supabase/supabase-js": "^2.98.0",
     "@tiptap/core": "^3.19.0",

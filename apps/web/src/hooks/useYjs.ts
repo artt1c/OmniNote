@@ -2,8 +2,7 @@ import * as Y from 'yjs'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { WS_PORT } from '@omninote/shared'
-import { User } from '@/utils/userUtils'
+import { WS_PORT, User } from '@omninote/shared'
 
 export const useYjs = (noteId: string, user: User) => {
   const [isOnline, setIsOnline] = useState(false)
