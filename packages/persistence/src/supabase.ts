@@ -60,11 +60,16 @@ export class SupabasePersistenceService {
     const state = Y.encodeStateAsUpdate(document);
     const hexData = '\\x' + Buffer.from(state).toString('hex');
 
+    // Extract title from Yjs metadata
+    const metadata = document.getMap('metadata');
+    const title = metadata.get('title') as string || 'Untitled';
+
     // Ensure parent record exists
     const { error: nodeError } = await this.supabase.from(NOTES_TABLE).upsert(
       {
         id: noteId,
-        owner_id: SUPABASE_USER_ID
+        owner_id: SUPABASE_USER_ID,
+        title: title
       },
       { onConflict: 'id' }
     );
@@ -86,5 +91,43 @@ export class SupabasePersistenceService {
     }
 
     console.log(`💾 Persisted state for: "${noteId}"`);
+  }
+
+  async listNotes(): Promise<{ id: string, title: string, updated_at: string }[]> {
+    const { data, error } = await this.supabase
+      .from(NOTES_TABLE)
+      .select('id, title, updated_at')
+      .eq('owner_id', SUPABASE_USER_ID)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('[listNotes] Supabase error:', error.message);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async deleteNote(noteId: string): Promise<void> {
+    const { error: contentError } = await this.supabase
+      .from(NOTE_CONTENTS_TABLE)
+      .delete()
+      .eq('note_id', noteId);
+
+    if (contentError) {
+      console.error(`[delete] Failed to delete content for "${noteId}":`, contentError.message);
+    }
+
+    const { error: noteError } = await this.supabase
+      .from(NOTES_TABLE)
+      .delete()
+      .eq('id', noteId);
+
+    if (noteError) {
+      console.error(`[delete] Failed to delete note record for "${noteId}":`, noteError.message);
+      throw new Error(`Failed to delete note: ${noteError.message}`);
+    }
+
+    console.log(`🗑️ Deleted note: "${noteId}"`);
   }
 }

@@ -1,23 +1,8 @@
 import { useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { useMemo } from 'react'
 import { getRandomUser } from '@/utils/userUtils'
-import { Markdown } from 'tiptap-markdown';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import { common, createLowlight } from 'lowlight'
-import html from 'highlight.js/lib/languages/xml';
-import css from 'highlight.js/lib/languages/css';
-import js from 'highlight.js/lib/languages/javascript';
-import ts from 'highlight.js/lib/languages/typescript';
 import { useYjs } from './useYjs';
-
-const lowlight = createLowlight(common);
-lowlight.register('html', html);
-lowlight.register('css', css);
-lowlight.register('js', js);
-lowlight.register('ts', ts);
+import { getEditorExtensions } from '@/components/editor/extensions';
 
 export const useCollaborativeEditor = (documentName: string) => {
   const user = useMemo(() => getRandomUser(), [])
@@ -25,33 +10,12 @@ export const useCollaborativeEditor = (documentName: string) => {
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-      }),
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
-      Markdown.configure({
-        html: false,
-        transformPastedText: true,
-        transformCopiedText: true,
-      }),
-      Collaboration.configure({
-        document: ydoc,
-      }),
-      ...(provider ? [
-        CollaborationCaret.configure({
-          provider: provider,
-          user: user,
-        })
-      ] : []),
-    ],
+    extensions: getEditorExtensions(ydoc, provider, user),
     editorProps: {
       attributes: {
-        class: 'prose prose-lg max-w-none mx-auto focus:outline-none min-h-[300px] p-4',
+        class: 'prose prose-p:text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground max-w-4xl mx-auto focus:outline-none min-h-[300px] p-4 text-foreground tiptap-zen',
       },
     },
   }, [ydoc, provider])
-  return { editor, isOnline, user, isLocalSynced }
+  return { editor, isOnline, user, isLocalSynced, ydoc }
 }

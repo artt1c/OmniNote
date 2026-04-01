@@ -1,5 +1,3 @@
-export const WS_PORT = 8080;
-
 // Storage Keys
 export const STORAGE_KEY = 'omninote-recent-docs';
 

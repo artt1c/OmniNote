@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { WS_PORT, User } from '@omninote/shared'
+import { User } from '@omninote/shared'
 
 export const useYjs = (noteId: string, user: User) => {
   const [isOnline, setIsOnline] = useState(false)
@@ -15,7 +15,7 @@ export const useYjs = (noteId: string, user: User) => {
 
   useEffect(() => {
     const wsProvider = new HocuspocusProvider({
-      url: `ws://localhost:${WS_PORT}`,
+      url: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080',
       name: roomName,
       document: ydoc,
     })

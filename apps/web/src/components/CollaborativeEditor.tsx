@@ -1,39 +1,81 @@
 'use client';
 
-import { EditorContent } from '@tiptap/react';
-import { useCollaborativeEditor } from '@/hooks/useCollaborativeEditor';
+import { EditorContent, Editor } from '@tiptap/react';
+import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
+import {
+  Bold, Italic, Strikethrough,
+  Heading1, Heading2, Heading3,
+  List, TextQuote
+} from 'lucide-react';
+import { Button } from './ui/button';
 
-interface Props {
-  documentName: string;
+interface CollaborativeEditorProps {
+  editor: Editor | null;
 }
 
-export function CollaborativeEditor({ documentName }: Props) {
-  const { editor, isOnline, user, isLocalSynced } = useCollaborativeEditor(documentName);
-
-  if (!isLocalSynced) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 font-medium">Loading local data...</p>
-        </div>
-      </div>
-    );
-  }
-
+export function CollaborativeEditor({ editor }: CollaborativeEditorProps) {
   if (!editor) return null;
 
   return (
-    <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
-      <div className="bg-gray-50 border-b px-4 py-2 flex items-center justify-between text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-amber-400'}`} />
-          {isOnline ? 'online' : 'offline'}
-        </div>
-        <div>User: {user.name}</div>
-      </div>
+    <div className="w-full">
+      <div className="overflow-hidden">
+        <BubbleMenu editor={editor} className="flex overflow-hidden rounded-lg bg-card border border-border shadow-xl divide-x divide-border">
+          <Button
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={`p-2 text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('bold') ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Bold className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={`p-2 text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('italic') ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Italic className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            className={`p-2 text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('strike') ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Strikethrough className="w-4 h-4" />
+          </Button>
+        </BubbleMenu>
 
-      <EditorContent className="text-black prose" editor={editor} />
+        <FloatingMenu editor={editor} className="flex gap-1 overflow-hidden rounded-lg bg-card border border-border shadow-xl p-1">
+          <Button
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            className={`p-1.5 rounded text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('heading', { level: 1 }) ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Heading1 className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            className={`p-1.5 rounded text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('heading', { level: 2 }) ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Heading2 className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            className={`p-1.5 rounded text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('heading', { level: 3 }) ? 'bg-accent text-foreground' : ''}`}
+          >
+            <Heading3 className="w-4 h-4" />
+          </Button>
+          <div className="w-px bg-border my-1 mx-0.5" />
+          <Button
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={`p-1.5 rounded text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('bulletList') ? 'bg-accent text-foreground' : ''}`}
+          >
+            <List className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={`p-1.5 rounded text-foreground hover:bg-accent hover:text-foreground transition-colors ${editor.isActive('blockquote') ? 'bg-accent text-foreground' : ''}`}
+          >
+            <TextQuote className="w-4 h-4" />
+          </Button>
+        </FloatingMenu>
+
+        <EditorContent className="text-foreground prose prose-p:text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-ul:text-foreground prose-ol:text-foreground prose-li:marker:text-primary relative" editor={editor} />
+      </div>
     </div>
   );
 }
