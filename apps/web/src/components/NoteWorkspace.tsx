@@ -25,13 +25,15 @@ export function NoteWorkspace({ documentId }: NoteWorkspaceProps) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-[700px] mx-auto px-6 lg:px-0">
       <DocumentHeader 
         title={title} 
         relativeTime={relativeTime} 
         onTitleChange={onTitleChange} 
       />
-      <CollaborativeEditor editor={editor} />
+      <div className="mt-8">
+        <CollaborativeEditor editor={editor} />
+      </div>
     </div>
   );
 }

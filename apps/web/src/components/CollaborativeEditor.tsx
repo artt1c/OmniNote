@@ -74,7 +74,7 @@ export function CollaborativeEditor({ editor }: CollaborativeEditorProps) {
           </Button>
         </FloatingMenu>
 
-        <EditorContent className="text-foreground prose prose-p:text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-ul:text-foreground prose-ol:text-foreground prose-li:marker:text-primary relative" editor={editor} />
+        <EditorContent className="relative" editor={editor} />
       </div>
     </div>
   );

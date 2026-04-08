@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "overrides": {
-    "yjs": "^13.6.20",
-    "prosemirror-model": "^1.23.0",
-    "@hocuspocus/server": "3.4.4"
+  "pnpm": {
+    "overrides": {
+      "yjs": "^13.6.20",
+      "prosemirror-model": "^1.23.0",
+      "@hocuspocus/server": "3.4.4",
+      "zod": "3.24.1"
+    }
   },
   "scripts": {
     "dev": "pnpm --parallel -r dev",

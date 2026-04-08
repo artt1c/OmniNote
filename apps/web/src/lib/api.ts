@@ -17,7 +17,7 @@ export async function fetchApi<T>(
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
     throw new Error(
-      errorBody.error || `API error: ${response.status} ${response.statusText}`
+      errorBody.message || errorBody.error || `API error: ${response.status} ${response.statusText}`
     );
   }
 

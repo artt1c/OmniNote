@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+import path from "path";
 
 const withSerwist = withSerwistInit({
   // Only generate and activate the service worker in production.
@@ -14,6 +15,13 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   transpilePackages: ['@omninote/shared'],
   reactStrictMode: false,
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      yjs: path.resolve(__dirname, "node_modules/yjs"),
+    };
+    return config;
+  },
 };
 
 export default withSerwist(nextConfig);

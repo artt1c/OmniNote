@@ -13,7 +13,7 @@ export const useCollaborativeEditor = (documentName: string) => {
     extensions: getEditorExtensions(ydoc, provider, user),
     editorProps: {
       attributes: {
-        class: 'prose prose-p:text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground max-w-4xl mx-auto focus:outline-none min-h-[300px] p-4 text-foreground tiptap-zen',
+        class: 'prose prose-p:text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground max-w-none focus:outline-none min-h-[300px] text-foreground tiptap-zen',
       },
     },
   }, [ydoc, provider])

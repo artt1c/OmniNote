@@ -8,7 +8,7 @@ interface DocumentHeaderProps {
 
 export function DocumentHeader({ title, relativeTime, onTitleChange }: DocumentHeaderProps) {
   return (
-    <div className="px-4 pt-12 pb-4 w-full">
+    <div className="pt-12 pb-4 w-full">
       <input
         type="text"
         value={title}

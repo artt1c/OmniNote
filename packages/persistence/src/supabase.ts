@@ -130,4 +130,23 @@ export class SupabasePersistenceService {
 
     console.log(`🗑️ Deleted note: "${noteId}"`);
   }
+
+  async signIn(email: string, password: string) {
+    return this.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+  }
+
+  async signUp(email: string, password: string, name: string) {
+    return this.supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+  }
 }

@@ -7,13 +7,10 @@ import { HocuspocusGateway } from './infrastructure/hocuspocus/hocuspocus.gatewa
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for the web frontend
   app.enableCors();
 
-  // Initialize the NestJS app (triggers OnModuleInit lifecycle hooks)
   await app.init();
 
-  // Attach Hocuspocus WebSocket upgrade handler to the underlying HTTP server
   const httpServer: import('http').Server = app
     .getHttpServer();
   const hocuspocusGateway = app.get(HocuspocusGateway);
