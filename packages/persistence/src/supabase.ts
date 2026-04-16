@@ -3,9 +3,10 @@ import * as Y from 'yjs';
 import {
   NOTES_TABLE,
   NOTE_CONTENTS_TABLE,
+  PROFILES_TABLE,
   SUPABASE_URL,
   SUPABASE_KEY,
-  SUPABASE_USER_ID
+  getSupabaseConfig
 } from '@omninote/shared';
 
 export class SupabasePersistenceService {
@@ -15,10 +16,15 @@ export class SupabasePersistenceService {
     if (!url || !key) {
       throw new Error('Supabase URL and Key are required for persistence');
     }
-    this.supabase = createClient(url, key);
+    this.supabase = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    });
   }
 
-  async fetchNote(noteId: string): Promise<Uint8Array | null> {
+  async fetchNote(noteId: string, ownerId: string): Promise<Uint8Array | null> {
     const { data, error } = await this.supabase
       .from(NOTE_CONTENTS_TABLE)
       .select('data')
@@ -56,7 +62,7 @@ export class SupabasePersistenceService {
     }
   }
 
-  async storeNote(noteId: string, document: Y.Doc): Promise<void> {
+  async storeNote(noteId: string, document: Y.Doc, ownerId: string): Promise<void> {
     const state = Y.encodeStateAsUpdate(document);
     const hexData = '\\x' + Buffer.from(state).toString('hex');
 
@@ -68,7 +74,7 @@ export class SupabasePersistenceService {
     const { error: nodeError } = await this.supabase.from(NOTES_TABLE).upsert(
       {
         id: noteId,
-        owner_id: SUPABASE_USER_ID,
+        owner_id: ownerId,
         title: title
       },
       { onConflict: 'id' }
@@ -93,11 +99,11 @@ export class SupabasePersistenceService {
     console.log(`💾 Persisted state for: "${noteId}"`);
   }
 
-  async listNotes(): Promise<{ id: string, title: string, updated_at: string }[]> {
+  async listNotes(ownerId: string): Promise<{ id: string, title: string, updated_at: string }[]> {
     const { data, error } = await this.supabase
       .from(NOTES_TABLE)
       .select('id, title, updated_at')
-      .eq('owner_id', SUPABASE_USER_ID)
+      .eq('owner_id', ownerId)
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -108,7 +114,7 @@ export class SupabasePersistenceService {
     return data || [];
   }
 
-  async deleteNote(noteId: string): Promise<void> {
+  async deleteNote(noteId: string, ownerId: string): Promise<void> {
     const { error: contentError } = await this.supabase
       .from(NOTE_CONTENTS_TABLE)
       .delete()
@@ -121,7 +127,8 @@ export class SupabasePersistenceService {
     const { error: noteError } = await this.supabase
       .from(NOTES_TABLE)
       .delete()
-      .eq('id', noteId);
+      .eq('id', noteId)
+      .eq('owner_id', ownerId);
 
     if (noteError) {
       console.error(`[delete] Failed to delete note record for "${noteId}":`, noteError.message);
@@ -129,6 +136,43 @@ export class SupabasePersistenceService {
     }
 
     console.log(`🗑️ Deleted note: "${noteId}"`);
+  }
+
+  /**
+   * Upsert note metadata (id + title) without overriding content.
+   * Used to register locally-created guest notes in the server DB after login.
+   */
+  async syncNotes(notes: { id: string; title: string }[], ownerId: string): Promise<void> {
+    if (notes.length === 0) return;
+
+    const rows = notes.map((n) => ({
+      id: n.id,
+      owner_id: ownerId,
+      title: n.title,
+    }));
+
+    const { error } = await this.supabase
+      .from(NOTES_TABLE)
+      .upsert(rows, { onConflict: 'id', ignoreDuplicates: false });
+
+    if (error) {
+      console.error('[syncNotes] Failed to sync notes:', error.message);
+      throw new Error(`Failed to sync notes: ${error.message}`);
+    }
+
+    console.log(`🔄 Synced ${notes.length} note(s) to server`);
+  }
+
+  async verifyToken(token: string): Promise<{ id: string } | null> {
+    try {
+      const { data, error } = await this.supabase.auth.getUser(token);
+      if (error || !data.user) {
+        return null;
+      }
+      return { id: data.user.id };
+    } catch {
+      return null;
+    }
   }
 
   async signIn(email: string, password: string) {
@@ -148,5 +192,65 @@ export class SupabasePersistenceService {
         },
       },
     });
+  }
+
+  async createProfile(userId: string, username: string, avatarUrl: string): Promise<void> {
+    const { url, key } = getSupabaseConfig();
+    // Create a dedicated client for this admin operation to ensure 
+    // it's not affected by any existing session context on the main client.
+    const adminClient = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    });
+
+    const { error } = await adminClient
+      .from(PROFILES_TABLE)
+      .insert({
+        id: userId,
+        username,
+        avatar_url: avatarUrl,
+      });
+
+    if (error) {
+      console.error('[createProfile] Failed to create user profile:', error.message);
+      throw new Error(`Failed to create profile: ${error.message}`);
+    }
+
+    console.log(`👤 Created profile for user: ${username}`);
+  }
+
+  async getProfile(userId: string): Promise<{ username: string; avatar_url: string } | null> {
+    const { data, error } = await this.supabase
+      .from(PROFILES_TABLE)
+      .select('username, avatar_url')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      if (error.code !== 'PGRST116') { // PGRST116 is 'no rows found'
+        console.error('[getProfile] Failed to fetch profile:', error.message);
+      }
+      return null;
+    }
+
+    return data;
+  }
+
+  async getAuthUser(userId: string): Promise<{ email: string; metadata: any } | null> {
+    const { data, error } = await this.supabase.auth.admin.getUserById(userId);
+
+    if (error || !data.user) {
+      if (error && error.status !== 404) {
+        console.error('[getAuthUser] Failed to fetch auth user:', error.message);
+      }
+      return null;
+    }
+
+    return { 
+      email: data.user.email || '', 
+      metadata: data.user.user_metadata || {} 
+    };
   }
 }

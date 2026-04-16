@@ -13,14 +13,18 @@ export class NotesService {
     @Inject(NoteRepository) private readonly noteRepository: NoteRepository,
   ) {}
 
-  async listNotes(): Promise<NoteDto[]> {
-    const notes = await this.noteRepository.list();
+  async listNotes(userId: string): Promise<NoteDto[]> {
+    const notes = await this.noteRepository.list(userId);
     return notes.map(
       (n) => new NoteDto(n.id, n.title, n.updatedAt),
     );
   }
 
-  async deleteNote(id: string): Promise<void> {
-    await this.noteRepository.delete(id);
+  async deleteNote(id: string, userId: string): Promise<void> {
+    await this.noteRepository.delete(id, userId);
+  }
+
+  async syncNotes(notes: { id: string; title: string }[], userId: string): Promise<void> {
+    await this.noteRepository.sync(notes, userId);
   }
 }

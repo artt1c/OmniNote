@@ -13,19 +13,19 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-background">
       <div className="text-center space-y-6 w-full max-w-md">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">OmniNote</h1>
-        <p className="text-secondary">Спільне редагування в реальному часі.</p>
+        <p className="text-secondary">Real-time collaborative editing.</p>
 
         <button
           onClick={createNewDocument}
           className="w-full rounded-md bg-primary px-3.5 py-3 text-sm font-semibold text-foreground shadow-sm hover:opacity-90 transition-all"
         >
-          + Створити нову нотатку
+          + Create new note
         </button>
 
         {documents.length > 0 && (
           <div className="mt-10 text-left">
             <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">
-              Останні документи
+              Recent documents
             </h2>
             <div className="bg-card rounded-lg border border-border divide-y divide-border">
               {documents.map((doc) => (
@@ -38,7 +38,7 @@ export default function Home() {
                     {doc.title}
                   </span>
                   <span className="text-xs text-secondary group-hover:text-primary">
-                    Відкрити →
+                    Open →
                   </span>
                 </div>
               ))}

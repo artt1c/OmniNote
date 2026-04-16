@@ -55,3 +55,5 @@ dist
 
 apps/web/public/sw*
 apps/web/public/swe-worker*
+
+develop.md

@@ -5,6 +5,7 @@ import { User } from '../../../domain/auth/entities/user.entity';
  */
 export interface RegisterInput {
   name: string;
+  username: string;
   email: string;
   password: string;
 }
@@ -14,4 +15,5 @@ export interface RegisterInput {
  */
 export interface RegisterOutput {
   user: User;
+  token?: string;
 }

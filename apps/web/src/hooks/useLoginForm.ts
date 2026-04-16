@@ -4,6 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
+import { setAuthCookie } from "@/lib/auth-cookie";
+import { getAllLocalNotes } from "@/lib/indexeddb-notes";
+import { supabase } from "@/lib/supabase-client";
 
 export const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -32,14 +35,12 @@ export function useLoginForm() {
         body: JSON.stringify(data),
       });
 
-      // Storage
-      localStorage.setItem("access_token", response.token);
-      localStorage.setItem("user_email", response.user.email);
+      setAuthCookie(response.token);
+
+      checkAndSyncLocalNotes();
 
       router.push("/");
     } catch (error: any) {
-      console.error("Login failed:", error.message);
-      // Set error on the root so it shows the general error message
       form.setError("root", {
         type: "manual",
         message: error.message || "Invalid email or password",
@@ -49,9 +50,42 @@ export function useLoginForm() {
     }
   };
 
+  async function checkAndSyncLocalNotes() {
+    const localNotes = await getAllLocalNotes();
+
+    if (localNotes.length > 0) {
+      await fetchApi("/notes/sync", {
+        method: "POST",
+        body: JSON.stringify(localNotes.map((n) => ({ id: n.id, title: n.title }))),
+      });
+    }
+  }
+
+  const onGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      form.setError("root", {
+        type: "manual",
+        message: error.message || "Failed to sign in with Google",
+      });
+      setIsLoading(false);
+    }
+  };
+
   return {
     form,
     isLoading,
     onSubmit: form.handleSubmit(onSubmit),
+    onGoogleSignIn,
   };
 }
+

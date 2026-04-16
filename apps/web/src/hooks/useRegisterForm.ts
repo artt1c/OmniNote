@@ -4,9 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
+import { supabase } from "@/lib/supabase-client";
 
 export const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string()
@@ -24,7 +25,7 @@ export function useRegisterForm() {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
+      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -34,18 +35,21 @@ export function useRegisterForm() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Attempting registration...");
-      await fetchApi<{ user: any }>("/auth/register", {
+      const response = await fetchApi<{ user: any; token?: string }>("/auth/register", {
         method: "POST",
         body: JSON.stringify({
-          name: data.name,
+          username: data.username,
           email: data.email,
           password: data.password,
         }),
       });
 
-      console.log("Registration successful, redirecting to login...");
-      router.push("/login");
+      if (response.token) {
+        const { setAuthCookie } = await import("@/lib/auth-cookie");
+        setAuthCookie(response.token);
+      }
+
+      router.push("/");
     } catch (error: any) {
       console.error("Registration failed:", error.message);
       form.setError("root", {
@@ -57,9 +61,30 @@ export function useRegisterForm() {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      form.setError("root", {
+        type: "manual",
+        message: error.message || "Failed to sign in with Google",
+      });
+      setIsLoading(false);
+    }
+  };
+
   return {
     form,
     isLoading,
     onSubmit: form.handleSubmit(onSubmit),
+    onGoogleSignIn,
   };
 }

@@ -13,9 +13,10 @@ interface LoginFormProps {
   form: UseFormReturn<LoginFormValues>;
   isLoading: boolean;
   onSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
+  onGoogleSignIn: () => Promise<void>;
 }
 
-export function LoginForm({ form, isLoading, onSubmit }: LoginFormProps) {
+export function LoginForm({ form, isLoading, onSubmit, onGoogleSignIn }: LoginFormProps) {
   const {
     register,
     formState: { errors },
@@ -105,9 +106,11 @@ export function LoginForm({ form, isLoading, onSubmit }: LoginFormProps) {
           </div>
 
           <Button
+            type="button"
             variant="outline"
             className="w-full h-12 bg-transparent border-[#242924] hover:bg-[#1a1f1a] hover:text-[#e2e8e0] text-[#e2e8e0] font-medium rounded-xl transition-all gap-3"
             disabled={isLoading}
+            onClick={onGoogleSignIn}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

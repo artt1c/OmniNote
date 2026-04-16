@@ -17,6 +17,13 @@ export abstract class AuthRepository {
    * @param name User's full name
    * @param email User email
    * @param password User password
+   * @param username User's unique username
    */
-  abstract register(name: string, email: string, password: string): Promise<{ user: User }>;
+  abstract register(name: string, email: string, password: string, username: string): Promise<{ user: User; token?: string }>;
+  
+  /**
+   * Fetches a user by their ID, including profile information.
+   * @param id User ID
+   */
+  abstract getUserById(id: string): Promise<User | null>;
 }

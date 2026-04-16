@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Home, FileText, Settings, Clock } from 'lucide-react';
+import { Plus, Home, FileText, Settings, LogIn, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
 
 import {
   Sidebar,
@@ -18,9 +17,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { useDocumentsHistory } from '@/hooks/useDocumentsHistory';
 import { useNotes } from '@/hooks/useNotes';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAuth } from '@/hooks/useAuth';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -39,9 +38,9 @@ const navItems = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
-  const { documents: recentDocuments } = useDocumentsHistory();
   const { notes, isLoading: isNotesLoading } = useNotes();
   const { createNewDocument, handleDeleteNote } = useWorkspace();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -57,7 +56,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold text-primary">OmniNote</span>
-                <span className="truncate text-xs text-muted-foreground">Editor</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {isAuthenticated ? 'Synced' : 'Guest mode'}
+                </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -99,49 +100,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Documents (Local) */}
-        {recentDocuments.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-2 px-4 mb-2 h-auto py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <Clock className="size-3" />
-              <span>Recent Documents</span>
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {recentDocuments.map((doc) => (
-                  <SidebarMenuItem key={`recent-${doc.id}`}>
-                    <ContextMenu>
-                      <ContextMenuTrigger asChild>
-                        <SidebarMenuButton
-                          onClick={() => router.push(`/documents/${doc.id}`)}
-                          tooltip={doc.title}
-                        >
-                          <Clock className="size-4" />
-                          <span className="truncate font-medium text-xs">{doc.title}</span>
-                        </SidebarMenuButton>
-                      </ContextMenuTrigger>
-                      <ContextMenuContent>
-                        <ContextMenuItem 
-                          onClick={() => handleDeleteNote(doc.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 size-4" />
-                          <span>Delete note</span>
-                        </ContextMenuItem>
-                      </ContextMenuContent>
-                    </ContextMenu>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* All Notes (Cloud) */}
+        {/* Unified Notes list — IndexedDB-first, merged with server when authenticated */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-2 px-4 mb-2 h-auto py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <FileText className="size-3" />
-            <span>All Notes</span>
+            <span>Notes</span>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             {isNotesLoading ? (
@@ -149,7 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ) : (
               <SidebarMenu>
                 {notes.map((note) => (
-                  <SidebarMenuItem key={`cloud-${note.id}`}>
+                  <SidebarMenuItem key={note.id}>
                     <ContextMenu>
                       <ContextMenuTrigger asChild>
                         <SidebarMenuButton
@@ -163,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </SidebarMenuButton>
                       </ContextMenuTrigger>
                       <ContextMenuContent>
-                        <ContextMenuItem 
+                        <ContextMenuItem
                           onClick={() => handleDeleteNote(note.id)}
                           className="text-destructive focus:text-destructive"
                         >
@@ -176,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 ))}
                 {notes.length === 0 && (
                   <div className="px-4 py-2 text-xs text-muted-foreground italic">
-                    No notes found in cloud
+                    No notes yet
                   </div>
                 )}
               </SidebarMenu>
@@ -185,14 +148,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

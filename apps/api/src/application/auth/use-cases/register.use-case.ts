@@ -17,6 +17,6 @@ export class RegisterUseCase {
    * @param input Registration details
    */
   async execute(input: RegisterInput): Promise<RegisterOutput> {
-    return this.authRepository.register(input.name, input.email, input.password);
+    return this.authRepository.register(input.name, input.email, input.password, input.username);
   }
 }

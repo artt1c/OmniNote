@@ -5,6 +5,7 @@ import { Database } from '@hocuspocus/extension-database';
 import { IncomingMessage } from 'http';
 import { Socket } from 'net';
 import { NoteRepository } from '../../domain/notes/note.repository';
+import { SupabasePersistenceService } from '@omninote/persistence';
 
 /**
  * HocuspocusGateway integrates the Hocuspocus collaborative editing server
@@ -29,13 +30,28 @@ export class HocuspocusGateway implements OnModuleInit {
     this.hocuspocus = new Hocuspocus({
       name: 'OmniNote Server',
       debounce: 2000,
+      async onAuthenticate({ token }) {
+        if (!token) {
+          throw new Error('Unauthorized');
+        }
+        const persistence = new SupabasePersistenceService();
+        const user = await persistence.verifyToken(token);
+        if (!user) {
+          throw new Error('Unauthorized');
+        }
+        return {
+          user: {
+            id: user.id
+          }
+        };
+      },
       extensions: [
         new Database({
-          fetch: async ({ documentName }) => {
-            return this.noteRepository.fetch(documentName);
+          fetch: async ({ documentName, context }) => {
+            return this.noteRepository.fetch(documentName, context.user.id);
           },
-          store: async ({ documentName, document }) => {
-            await this.noteRepository.store(documentName, document);
+          store: async ({ documentName, document, context }) => {
+            await this.noteRepository.store(documentName, document, context.user.id);
           },
         }),
       ],

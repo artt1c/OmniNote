@@ -1,8 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Inject } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, Inject, UseGuards } from '@nestjs/common';
 import { LoginUseCase } from '../../application/auth/use-cases/login.use-case';
 import { RegisterUseCase } from '../../application/auth/use-cases/register.use-case';
+import { GetMeUseCase } from '../../application/auth/use-cases/get-me.use-case';
 import { LoginInput, LoginOutput } from '../../application/auth/dto/login.dto';
 import { RegisterInput, RegisterOutput } from '../../application/auth/dto/register.dto';
+import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+import { User } from './decorators/user.decorator';
 
 /**
  * Controller for Authentication endpoints.
@@ -13,7 +16,8 @@ export class AuthController {
   constructor(
     @Inject(LoginUseCase) private readonly loginUseCase: LoginUseCase,
     @Inject(RegisterUseCase) private readonly registerUseCase: RegisterUseCase,
-  ) {}
+    @Inject(GetMeUseCase) private readonly getMeUseCase: GetMeUseCase,
+  ) { }
 
   /**
    * Endpoint for user login.
@@ -33,5 +37,16 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() input: RegisterInput): Promise<RegisterOutput> {
     return this.registerUseCase.execute(input);
+  }
+
+  /**
+   * Endpoint for retrieving the currently authenticated user.
+   * @param user The user payload from the token
+   */
+  @Get('me')
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getMe(@User() user: { id: string }): Promise<any> {
+    return this.getMeUseCase.execute(user.id);
   }
 }

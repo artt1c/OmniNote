@@ -1,10 +1,31 @@
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
+import { Loader2 } from "lucide-react";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { isAuthenticated, isLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isLoading, isAuthenticated, router]);
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#4a6741] animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#000000] text-[#e2e8e0] selection:bg-[#4a6741]/30 flex flex-col items-center justify-between p-6 overflow-hidden relative">
       {/* Background Effects */}
