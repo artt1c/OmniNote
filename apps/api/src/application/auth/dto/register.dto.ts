@@ -16,4 +16,5 @@ export interface RegisterInput {
 export interface RegisterOutput {
   user: User;
   token?: string;
+  refreshToken?: string;
 }

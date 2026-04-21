@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  username  String?
+  email     String?  @unique
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ownedNotes    Note[]             @relation("NoteOwner")
+  collaborations NoteCollaborator[]
+
+  @@map("profiles")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  title     String   @default("Untitled")
+  isPublic  Boolean  @default(false) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ownerId String  @map("owner_id")
+  owner   Profile @relation("NoteOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  collaborators NoteCollaborator[]
+  content       NoteContent?
+
+  @@map("notes")
+}
+
+model NoteContent {
+  noteId    String   @id @map("note_id")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  
+  data      Bytes    
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("note_contents")
+}
+
+model NoteCollaborator {
+  noteId     String                 @map("note_id")
+  userId     String                 @map("user_id")
+  permission CollaboratorPermission @default(READ)
+
+  note    Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, userId])
+  @@map("note_collaborators")
+}
+
+enum CollaboratorPermission {
+  READ
+  WRITE
+
+  @@map("collaborator_permission")
+}

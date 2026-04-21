@@ -17,6 +17,8 @@ import { useUser } from '@/hooks/useUser';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { DocumentSyncIndicator } from './DocumentSyncIndicator';
+import { ShareDocumentButton } from './ShareDocumentButton';
 
 export function AppHeader() {
   const router = useRouter();
@@ -38,10 +40,15 @@ export function AppHeader() {
         <SidebarTrigger className="-ml-1" />
         <div className="flex items-center gap-2 overflow-hidden px-4">
           {/* Page title or breadcrumbs could go here */}
+          <DocumentSyncIndicator />
         </div>
       </div>
 
       <div className="ml-auto flex items-center gap-4">
+        <div className="flex items-center gap-2 empty:hidden">
+
+          <ShareDocumentButton />
+        </div>
         <div className="flex items-center gap-3">
           {isLoading ? (
             <div className="flex items-center justify-center p-2">

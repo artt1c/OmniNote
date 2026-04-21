@@ -27,6 +27,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const navItems = [
   {
@@ -108,7 +109,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             {isNotesLoading ? (
-              <div className="px-4 py-2 text-xs text-muted-foreground">Loading notes...</div>
+              <SidebarMenu>
+                {[...Array(5)].map((_, i) => (
+                  <SidebarMenuItem key={i}>
+                    <div className="flex items-center gap-2 px-2 py-1.5">
+                      <Skeleton className="size-4 shrink-0" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
             ) : (
               <SidebarMenu>
                 {notes.map((note) => (

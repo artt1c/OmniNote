@@ -14,4 +14,5 @@ export interface LoginInput {
 export interface LoginOutput {
   user: User;
   token: string;
+  refreshToken: string;
 }

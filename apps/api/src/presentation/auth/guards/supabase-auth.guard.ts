@@ -3,12 +3,15 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
-import { SupabasePersistenceService } from '@omninote/persistence';
+import { SupabasePersistenceService } from '../../../infrastructure/persistence/supabase-persistence.service';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
-  private readonly persistence = new SupabasePersistenceService();
+  constructor(
+    @Inject(SupabasePersistenceService) private readonly persistence: SupabasePersistenceService
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

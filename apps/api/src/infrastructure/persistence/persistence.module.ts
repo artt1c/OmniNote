@@ -1,19 +1,20 @@
 import { Module } from '@nestjs/common';
 import { NoteRepository } from '../../domain/notes/note.repository';
 import { SupabaseNotesRepository } from './supabase-notes.repository';
+import { SupabasePersistenceService } from './supabase-persistence.service';
 
 /**
  * PersistenceModule wires the abstract NoteRepository token
- * to its concrete Supabase implementation.
- * Import this module anywhere you need data access.
+ * and provides the local SupabasePersistenceService.
  */
 @Module({
   providers: [
+    SupabasePersistenceService,
     {
       provide: NoteRepository,
       useClass: SupabaseNotesRepository,
     },
   ],
-  exports: [NoteRepository],
+  exports: [NoteRepository, SupabasePersistenceService],
 })
 export class PersistenceModule {}

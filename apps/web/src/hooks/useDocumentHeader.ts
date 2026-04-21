@@ -2,20 +2,10 @@
 
 import * as Y from 'yjs';
 import { useState, useEffect } from 'react';
-import { useDocumentsHistory } from '@/hooks/useDocumentsHistory';
 
 export function useDocumentHeader(documentId: string, ydoc: Y.Doc | null) {
-  const { documents, updateDocumentTitle: updateLocalHistory } = useDocumentsHistory();
-  const document = documents.find((doc) => doc.id === documentId);
-
-  const [title, setTitle] = useState(document?.title || '');
+  const [title, setTitle] = useState('');
   const [relativeTime, setRelativeTime] = useState('');
-
-  useEffect(() => {
-    if (document?.title && (title === '' || title === 'Untitled')) {
-      setTitle(document.title);
-    }
-  }, [document?.title]);
 
   useEffect(() => {
     if (!ydoc) return;
@@ -26,7 +16,6 @@ export function useDocumentHeader(documentId: string, ydoc: Y.Doc | null) {
     if (yTitle) {
       if (yTitle !== title) {
         setTitle(yTitle);
-        updateLocalHistory(documentId, yTitle);
       }
     } else if (title) {
       metadata.set('title', title);
@@ -36,7 +25,6 @@ export function useDocumentHeader(documentId: string, ydoc: Y.Doc | null) {
       const updatedTitle = metadata.get('title') as string;
       if (updatedTitle !== undefined && updatedTitle !== title) {
         setTitle(updatedTitle);
-        updateLocalHistory(documentId, updatedTitle);
       }
     };
 
@@ -46,7 +34,9 @@ export function useDocumentHeader(documentId: string, ydoc: Y.Doc | null) {
 
   useEffect(() => {
     const calculateRelativeTime = () => {
-      const time = document?.lastVisited || Date.now();
+      // Since local history is removed, fallback to basic relative time logic 
+      // when no document lastVisited exists in memory
+      const time = Date.now();
       const diff = Date.now() - time;
       const minutes = Math.floor(diff / 60000);
 
@@ -66,18 +56,14 @@ export function useDocumentHeader(documentId: string, ydoc: Y.Doc | null) {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [document?.lastVisited]);
+  }, []);
 
   const onTitleChange = (newTitle: string) => {
     setTitle(newTitle);
 
-    // Update Yjs (this will trigger the observer and update history)
     if (ydoc) {
       const metadata = ydoc.getMap('metadata');
       metadata.set('title', newTitle || 'Untitled');
-    } else {
-      // Fallback to local history if ydoc not ready
-      updateLocalHistory(documentId, newTitle || 'Untitled');
     }
   };
 

@@ -16,7 +16,7 @@ export interface UserProfile {
  * Uses the /auth/me endpoint to sync user state.
  */
 export function useUser() {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, refresh: refreshAuth } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +42,8 @@ export function useUser() {
         if (isMounted) {
           console.error('[useUser] Failed to fetch user profile:', err.message);
           setError(err.message);
-          // If we can't fetch the user despite being "authenticated" (token present), 
-          // it might be an expired token or a deleted user.
+          setUser(null);
+          refreshAuth();
         }
       } finally {
         if (isMounted) {
@@ -57,7 +57,7 @@ export function useUser() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, refreshAuth]);
 
   return {
     user,

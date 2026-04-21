@@ -7,7 +7,9 @@ import {
   HttpStatus,
   Inject,
   Param,
+  Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { NotesService } from '../../application/notes/notes.service';
@@ -59,6 +61,51 @@ export class NotesController {
   ): Promise<{ message: string }> {
     await this.notesService.syncNotes(notes, user.id);
     return { message: `Synced ${notes.length} note(s)` };
+  }
+
+  @Get('search')
+  async searchUsers(@Query('q') query: string): Promise<any[]> {
+    return this.notesService.searchUsers(query);
+  }
+
+  @Get(':id/collaborators')
+  async getCollaborators(@Param('id') id: string): Promise<any[]> {
+    return this.notesService.getCollaborators(id);
+  }
+
+  @Post(':id/collaborators')
+  async addCollaborator(
+    @Param('id') id: string,
+    @Body() body: { userId: string; permission: string },
+    @User() user: { id: string }
+  ): Promise<{ message: string }> {
+    await this.notesService.addCollaborator(id, body.userId, body.permission, user.id);
+    return { message: 'Collaborator added' };
+  }
+
+  @Delete(':id/collaborators/:userId')
+  async removeCollaborator(
+    @Param('id') id: string,
+    @Param('userId') collaboratorId: string,
+    @User() user: { id: string }
+  ): Promise<{ message: string }> {
+    await this.notesService.removeCollaborator(id, collaboratorId, user.id);
+    return { message: 'Collaborator removed' };
+  }
+
+  @Patch(':id/public')
+  async updatePublicAccess(
+    @Param('id') id: string,
+    @Body() body: { isPublic: boolean }
+  ): Promise<{ message: string }> {
+    await this.notesService.updatePublicAccess(id, body.isPublic);
+    return { message: 'Public access updated' };
+  }
+
+  @Get(':id/public')
+  async getPublicAccess(@Param('id') id: string): Promise<{ isPublic: boolean }> {
+    const isPublic = await this.notesService.getPublicAccess(id);
+    return { isPublic };
   }
 }
 

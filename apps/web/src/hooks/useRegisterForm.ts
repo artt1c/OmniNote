@@ -35,7 +35,7 @@ export function useRegisterForm() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetchApi<{ user: any; token?: string }>("/auth/register", {
+      const response = await fetchApi<{ user: any; token?: string; refreshToken?: string }>("/auth/register", {
         method: "POST",
         body: JSON.stringify({
           username: data.username,
@@ -46,7 +46,7 @@ export function useRegisterForm() {
 
       if (response.token) {
         const { setAuthCookie } = await import("@/lib/auth-cookie");
-        setAuthCookie(response.token);
+        setAuthCookie(response.token, response.refreshToken);
       }
 
       router.push("/");

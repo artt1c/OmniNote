@@ -6,8 +6,11 @@ import { User } from '@omninote/shared'
 import { useAuth } from './useAuth'
 import { putLocalNote } from '@/lib/indexeddb-notes'
 
+import { useRouter } from 'next/navigation'
+
 export const useYjs = (noteId: string, user: User) => {
   const { isAuthenticated, token, isLoading: isAuthLoading } = useAuth()
+  const router = useRouter()
   const [isOnline, setIsOnline] = useState(false)
   const [isLocalSynced, setIsLocalSynced] = useState(false)
   const ydoc = useMemo(() => new Y.Doc(), [])
@@ -23,6 +26,8 @@ export const useYjs = (noteId: string, user: User) => {
     // Always initialize IndexedDB persistence — it's the source of truth
     const indexeddbProvider = new IndexeddbPersistence(roomName, ydoc)
 
+    let hasAttemptedConnect = false;
+
     indexeddbProvider.on('synced', () => {
       setIsLocalSynced(true)
 
@@ -34,7 +39,8 @@ export const useYjs = (noteId: string, user: User) => {
       }
 
       // Only connect to WebSocket if user is authenticated
-      if (isAuthenticated && typeof navigator !== 'undefined' && navigator.onLine) {
+      if (!hasAttemptedConnect && isAuthenticated && typeof navigator !== 'undefined' && navigator.onLine) {
+        hasAttemptedConnect = true;
         providerRef.current?.connect()
       }
     })
@@ -46,6 +52,10 @@ export const useYjs = (noteId: string, user: User) => {
         name: roomName,
         document: ydoc,
         token,
+        onAuthenticationFailed: () => {
+          console.error('Authentication failed: you do not have access to this note')
+          router.push('/')
+        }
       })
       providerRef.current = wsProvider
 

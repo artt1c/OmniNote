@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '@/lib/api';
 import { useAuth } from './useAuth';
 import {
-  getAllLocalNotes,
+  getActiveLocalNotes,
+  getPendingSyncNotes,
   deleteLocalNote,
+  hardDeleteLocalNote,
   mergeServerNotes,
+  notesEmitter,
   type LocalNote,
 } from '@/lib/indexeddb-notes';
 
@@ -16,62 +19,89 @@ export function useNotes() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchNotes = useCallback(async () => {
+  // 1. Reactive UI Layer
+  const loadLocalNotes = useCallback(async () => {
     try {
-      setIsLoading(true);
-
-      // Always load from IndexedDB first (instant, offline-safe)
-      const local = await getAllLocalNotes();
-      setNotes(local);
-
-      // If authenticated, merge in the server list so other devices' notes appear
-      if (isAuthenticated) {
-        try {
-          const serverNotes = await fetchApi<{ id: string; title: string; updatedAt: string }[]>('/notes');
-          const mapped: LocalNote[] = (serverNotes || []).map((n) => ({
-            id: n.id,
-            title: n.title,
-            updatedAt: n.updatedAt || new Date().toISOString(),
-          }));
-          await mergeServerNotes(mapped);
-          // Re-read after merge so state reflects both sources
-          const merged = await getAllLocalNotes();
-          setNotes(merged);
-        } catch (serverError) {
-          // Server unavailable — continue with local data
-          console.warn('Could not fetch server notes, using local data:', serverError);
-        }
-      }
+      const activeNotes = await getActiveLocalNotes();
+      setNotes(activeNotes);
     } catch (e: any) {
+      console.error('Error loading local notes:', e);
       setError(e);
-      console.error('Error fetching notes:', e.message);
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Initial load
+    loadLocalNotes();
+
+    // Subscribe to DB changes
+    const unsubscribe = notesEmitter.subscribe(loadLocalNotes);
+    return () => unsubscribe();
+  }, [loadLocalNotes]);
+
+  // 2. Background Sync Worker
+  const syncWithServer = useCallback(async () => {
+    if (!isAuthenticated || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+
+    try {
+      // Step A: Push offline deletions
+      const pendingSync = await getPendingSyncNotes();
+      for (const note of pendingSync) {
+        if (note.syncState === 'deleted') {
+          try {
+            await fetchApi(`/notes/${note.id}`, { method: 'DELETE' });
+            await hardDeleteLocalNote(note.id); // Permanently remove once server confirms
+          } catch (e) {
+            console.error('Failed to sync deletion for note:', note.id, e);
+          }
+        }
+      }
+
+      // Step B: Pull server list
+      const serverNotes = await fetchApi<{ id: string; title: string; updatedAt: string }[]>('/notes');
+      if (serverNotes) {
+        const mapped: LocalNote[] = serverNotes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          updatedAt: n.updatedAt || new Date().toISOString(),
+        }));
+        await mergeServerNotes(mapped);
+      }
+    } catch (e: any) {
+      console.warn('Background sync failed:', e.message);
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthLoading) {
-      fetchNotes();
+    if (!isAuthLoading && isAuthenticated) {
+      syncWithServer();
     }
-  }, [isAuthLoading, fetchNotes]);
+    
+    if (typeof window !== 'undefined') {
+      const handleOnline = () => {
+        if (isAuthenticated) syncWithServer();
+      };
+      window.addEventListener('online', handleOnline);
+      return () => window.removeEventListener('online', handleOnline);
+    }
+  }, [isAuthLoading, isAuthenticated, syncWithServer]);
 
+  // UI Actions
   const deleteNote = async (id: string) => {
     try {
-      // Always delete locally first
+      // Mark as deleted locally. UI updates immediately via EventEmitter.
       await deleteLocalNote(id);
-      setNotes((prev) => prev.filter((n) => n.id !== id));
-
-      // If authenticated, also delete from server
-      if (isAuthenticated) {
-        await fetchApi(`/notes/${id}`, { method: 'DELETE' });
-      }
+      
+      // Attempt to sync immediately
+      syncWithServer();
     } catch (e: any) {
       console.error('Error deleting note:', e.message);
       throw e;
     }
   };
 
-  return { notes, isLoading, error, refetch: fetchNotes, deleteNote };
+  return { notes, isLoading, error, refetch: syncWithServer, deleteNote };
 }
 

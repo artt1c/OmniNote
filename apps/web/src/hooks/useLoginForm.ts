@@ -5,7 +5,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import { setAuthCookie } from "@/lib/auth-cookie";
-import { getAllLocalNotes } from "@/lib/indexeddb-notes";
+import { getActiveLocalNotes } from "@/lib/indexeddb-notes";
 import { supabase } from "@/lib/supabase-client";
 
 export const loginSchema = z.object({
@@ -30,12 +30,12 @@ export function useLoginForm() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetchApi<{ user: any; token: string }>("/auth/login", {
+      const response = await fetchApi<{ user: any; token: string; refreshToken: string }>("/auth/login", {
         method: "POST",
         body: JSON.stringify(data),
       });
 
-      setAuthCookie(response.token);
+      setAuthCookie(response.token, response.refreshToken);
 
       checkAndSyncLocalNotes();
 
@@ -51,7 +51,7 @@ export function useLoginForm() {
   };
 
   async function checkAndSyncLocalNotes() {
-    const localNotes = await getAllLocalNotes();
+    const localNotes = await getActiveLocalNotes();
 
     if (localNotes.length > 0) {
       await fetchApi("/notes/sync", {

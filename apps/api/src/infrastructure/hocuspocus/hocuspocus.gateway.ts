@@ -5,7 +5,7 @@ import { Database } from '@hocuspocus/extension-database';
 import { IncomingMessage } from 'http';
 import { Socket } from 'net';
 import { NoteRepository } from '../../domain/notes/note.repository';
-import { SupabasePersistenceService } from '@omninote/persistence';
+import { SupabasePersistenceService } from '../persistence/supabase-persistence.service';
 
 /**
  * HocuspocusGateway integrates the Hocuspocus collaborative editing server
@@ -22,7 +22,8 @@ export class HocuspocusGateway implements OnModuleInit {
 
   constructor(
     @Inject(NoteRepository) private readonly noteRepository: NoteRepository,
-  ) {}
+    @Inject(SupabasePersistenceService) private readonly persistence: SupabasePersistenceService,
+  ) { }
 
   onModuleInit(): void {
     this.wss = new WebSocketServer({ noServer: true });
@@ -30,15 +31,20 @@ export class HocuspocusGateway implements OnModuleInit {
     this.hocuspocus = new Hocuspocus({
       name: 'OmniNote Server',
       debounce: 2000,
-      async onAuthenticate({ token }) {
+      onAuthenticate: async ({ token, documentName }) => {
         if (!token) {
           throw new Error('Unauthorized');
         }
-        const persistence = new SupabasePersistenceService();
-        const user = await persistence.verifyToken(token);
+        const user = await this.persistence.verifyToken(token);
         if (!user) {
           throw new Error('Unauthorized');
         }
+
+        const hasAccess = await this.persistence.checkPermission(documentName, user.id, 'read');
+        if (!hasAccess) {
+          throw new Error('Unauthorized: You do not have access to this note');
+        }
+
         return {
           user: {
             id: user.id

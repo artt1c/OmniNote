@@ -26,6 +26,7 @@ export const getEditorExtensions = (ydoc: Y.Doc, provider: HocuspocusProvider | 
   return [
     StarterKit.configure({
       codeBlock: false,
+      undoRedo: false,
     }),
     CodeBlockLowlight.configure({
       lowlight,
