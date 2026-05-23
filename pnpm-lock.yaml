@@ -8,7 +8,7 @@ overrides:
   yjs: ^13.6.20
   prosemirror-model: ^1.23.0
   '@hocuspocus/server': 3.4.4
-  zod: 3.24.1
+  zod: ^4.4.3
 
 importers:
 
@@ -211,8 +211,8 @@ importers:
         specifier: ^13.6.20
         version: 13.6.28
       zod:
-        specifier: 3.24.1
-        version: 3.24.1
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -919,7 +919,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
-      zod: 3.24.1
+      zod: ^4.4.3
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
@@ -5083,16 +5083,16 @@ packages:
   zod-to-json-schema@3.25.1:
     resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
     peerDependencies:
-      zod: 3.24.1
+      zod: ^4.4.3
 
   zod-validation-error@4.0.2:
     resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: 3.24.1
+      zod: ^4.4.3
 
-  zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -5742,7 +5742,7 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
-  '@modelcontextprotocol/sdk@1.27.1(zod@3.24.1)':
+  '@modelcontextprotocol/sdk@1.27.1(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.11(hono@4.12.7)
       ajv: 8.18.0
@@ -5759,8 +5759,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 3.24.1
-      zod-to-json-schema: 3.25.1(zod@3.24.1)
+      zod: 4.4.3
+      zod-to-json-schema: 3.25.1(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -6675,7 +6675,7 @@ snapshots:
       glob: 10.5.0
       pretty-bytes: 6.1.1
       source-map: 0.8.0-beta.0
-      zod: 3.24.1
+      zod: 4.4.3
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -6694,7 +6694,7 @@ snapshots:
       react: 19.2.0
       semver: 7.7.3
       serwist: 9.5.6(browserslist@4.28.1)(typescript@5.9.3)
-      zod: 3.24.1
+      zod: 4.4.3
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -6709,7 +6709,7 @@ snapshots:
       '@serwist/build': 9.5.6(browserslist@4.28.1)(typescript@5.9.3)
       '@serwist/utils': 9.5.6(browserslist@4.28.1)
       pretty-bytes: 6.1.1
-      zod: 3.24.1
+      zod: 4.4.3
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -8092,8 +8092,8 @@ snapshots:
       '@babel/parser': 7.28.5
       eslint: 9.39.2(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 3.24.1
-      zod-validation-error: 4.0.2(zod@3.24.1)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -9755,7 +9755,7 @@ snapshots:
       '@babel/plugin-transform-typescript': 7.28.6(@babel/core@7.28.5)
       '@babel/preset-typescript': 7.28.5(@babel/core@7.28.5)
       '@dotenvx/dotenvx': 1.54.1
-      '@modelcontextprotocol/sdk': 1.27.1(zod@3.24.1)
+      '@modelcontextprotocol/sdk': 1.27.1(zod@4.4.3)
       '@types/validate-npm-package-name': 4.0.2
       browserslist: 4.28.1
       commander: 14.0.3
@@ -9782,8 +9782,8 @@ snapshots:
       ts-morph: 26.0.0
       tsconfig-paths: 4.2.0
       validate-npm-package-name: 7.0.2
-      zod: 3.24.1
-      zod-to-json-schema: 3.25.1(zod@3.24.1)
+      zod: 4.4.3
+      zod-to-json-schema: 3.25.1(zod@4.4.3)
     transitivePeerDependencies:
       - '@cfworker/json-schema'
       - '@types/node'
@@ -10377,12 +10377,12 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  zod-to-json-schema@3.25.1(zod@3.24.1):
+  zod-to-json-schema@3.25.1(zod@4.4.3):
     dependencies:
-      zod: 3.24.1
+      zod: 4.4.3
 
-  zod-validation-error@4.0.2(zod@3.24.1):
+  zod-validation-error@4.0.2(zod@4.4.3):
     dependencies:
-      zod: 3.24.1
+      zod: 4.4.3
 
-  zod@3.24.1: {}
+  zod@4.4.3: {}

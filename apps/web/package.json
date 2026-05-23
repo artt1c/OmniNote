@@ -50,7 +50,7 @@
     "uuid": "^13.0.0",
     "y-indexeddb": "^9.0.12",
     "yjs": "^13.6.20",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

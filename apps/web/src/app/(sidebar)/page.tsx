@@ -170,7 +170,7 @@ export default function Home() {
       id, 
       title: title || 'Untitled', 
       updatedAt: new Date().toISOString(), 
-      syncState: 'synced' 
+      syncState: 'created' 
     });
     
     router.push(`/documents/${id}`);

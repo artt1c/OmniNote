@@ -17,7 +17,17 @@ export interface UserProfile {
  */
 export function useUser() {
   const { isAuthenticated, token, refresh: refreshAuth } = useAuth();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('omninote_user_profile');
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {}
+      }
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +37,14 @@ export function useUser() {
     async function fetchUser() {
       if (!isAuthenticated || !token) {
         setUser(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('omninote_user_profile');
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
         setIsLoading(false);
         return;
       }
@@ -36,14 +54,29 @@ export function useUser() {
         const data = await fetchApi<{ user: UserProfile }>('/auth/me');
         if (isMounted) {
           setUser(data.user);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('omninote_user_profile', JSON.stringify(data.user));
+          }
           setError(null);
         }
       } catch (err: any) {
         if (isMounted) {
           console.error('[useUser] Failed to fetch user profile:', err.message);
           setError(err.message);
-          setUser(null);
-          refreshAuth();
+
+          const isNetworkError = 
+            (typeof navigator !== 'undefined' && !navigator.onLine) ||
+            err.message?.includes('Failed to fetch') ||
+            err.message?.includes('NetworkError') ||
+            err.message?.includes('Load failed');
+
+          if (!isNetworkError) {
+            setUser(null);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('omninote_user_profile');
+            }
+            refreshAuth();
+          }
         }
       } finally {
         if (isMounted) {
@@ -53,6 +86,15 @@ export function useUser() {
     }
 
     fetchUser();
+
+    if (typeof window !== 'undefined') {
+      const handleOnline = () => fetchUser();
+      window.addEventListener('online', handleOnline);
+      return () => {
+        isMounted = false;
+        window.removeEventListener('online', handleOnline);
+      };
+    }
 
     return () => {
       isMounted = false;

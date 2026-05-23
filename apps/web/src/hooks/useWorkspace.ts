@@ -10,7 +10,7 @@ export function useWorkspace() {
   const createNewDocument = async () => {
     const id = uuidv4();
     // Persist metadata to IndexedDB immediately so it shows in the sidebar for both guests and authenticated users
-    await putLocalNote({ id, title: 'Untitled', updatedAt: new Date().toISOString(), syncState: 'synced' });
+    await putLocalNote({ id, title: 'Untitled', updatedAt: new Date().toISOString(), syncState: 'created' });
     router.push(`/documents/${id}`);
   };
 

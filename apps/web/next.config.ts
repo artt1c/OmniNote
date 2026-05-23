@@ -1,3 +1,6 @@
+import { ZodFunction } from "zod";
+(ZodFunction.prototype as any).implementAsync = ZodFunction.prototype.implement;
+
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 import path from "path";

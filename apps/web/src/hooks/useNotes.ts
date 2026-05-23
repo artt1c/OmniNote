@@ -3,9 +3,11 @@ import { fetchApi } from '@/lib/api';
 import { useAuth } from './useAuth';
 import {
   getActiveLocalNotes,
-  getPendingSyncNotes,
+  getPendingDeletions,
+  getPendingCreations,
   deleteLocalNote,
   hardDeleteLocalNote,
+  putLocalNote,
   mergeServerNotes,
   notesEmitter,
   type LocalNote,
@@ -47,19 +49,34 @@ export function useNotes() {
 
     try {
       // Step A: Push offline deletions
-      const pendingSync = await getPendingSyncNotes();
-      for (const note of pendingSync) {
-        if (note.syncState === 'deleted') {
-          try {
-            await fetchApi(`/notes/${note.id}`, { method: 'DELETE' });
-            await hardDeleteLocalNote(note.id); // Permanently remove once server confirms
-          } catch (e) {
-            console.error('Failed to sync deletion for note:', note.id, e);
-          }
+      const pendingDeletions = await getPendingDeletions();
+      for (const note of pendingDeletions) {
+        try {
+          await fetchApi(`/notes/${note.id}`, { method: 'DELETE' });
+          await hardDeleteLocalNote(note.id); // Permanently remove once server confirms
+        } catch (e) {
+          console.error('Failed to sync deletion for note:', note.id, e);
         }
       }
 
-      // Step B: Pull server list
+      // Step B: Push offline creations
+      const pendingCreations = await getPendingCreations();
+      if (pendingCreations.length > 0) {
+        try {
+          await fetchApi('/notes/sync', {
+            method: 'POST',
+            body: JSON.stringify(pendingCreations.map((c) => ({ id: c.id, title: c.title }))),
+          });
+          // Update local syncState to 'synced' once server confirms
+          for (const note of pendingCreations) {
+            await putLocalNote({ ...note, syncState: 'synced' });
+          }
+        } catch (e) {
+          console.error('Failed to sync creations for notes:', e);
+        }
+      }
+
+      // Step C: Pull server list
       const serverNotes = await fetchApi<{ id: string; title: string; updatedAt: string }[]>('/notes');
       if (serverNotes) {
         const mapped: LocalNote[] = serverNotes.map((n) => ({

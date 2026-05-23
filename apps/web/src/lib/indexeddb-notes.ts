@@ -4,7 +4,7 @@ export interface LocalNote {
   id: string;
   title: string;
   updatedAt: string;
-  syncState?: 'synced' | 'deleted';
+  syncState?: 'synced' | 'deleted' | 'created';
 }
 
 const DB_NAME = 'omninote';
@@ -78,12 +78,28 @@ export async function getPendingSyncNotes(): Promise<LocalNote[]> {
   return all.filter(n => n.syncState === 'deleted');
 }
 
+export async function getPendingDeletions(): Promise<LocalNote[]> {
+  const db = await getDb();
+  const all = await db.getAll(STORE_NAME) as LocalNote[];
+  return all.filter(n => n.syncState === 'deleted');
+}
+
+export async function getPendingCreations(): Promise<LocalNote[]> {
+  const db = await getDb();
+  const all = await db.getAll(STORE_NAME) as LocalNote[];
+  return all.filter(n => n.syncState === 'created');
+}
+
 /**
  * Insert or update a note's metadata.
  */
 export async function putLocalNote(note: LocalNote): Promise<void> {
   const db = await getDb();
-  await db.put(STORE_NAME, { ...note, syncState: note.syncState ?? 'synced' });
+  const existing = await db.get(STORE_NAME, note.id) as LocalNote | undefined;
+  await db.put(STORE_NAME, {
+    ...note,
+    syncState: note.syncState ?? existing?.syncState ?? 'synced'
+  });
   notesEmitter.emit();
 }
 
