@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Share2,
@@ -44,9 +45,15 @@ export function ShareDialog({ isOpen, onClose, noteId, noteTitle }: ShareDialogP
     copyLink
   } = useShare(noteId, isOpen);
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = React.useState(false);
 
-  return (
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-background border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-6 border-b border-border flex items-center justify-between">
@@ -183,6 +190,7 @@ export function ShareDialog({ isOpen, onClose, noteId, noteTitle }: ShareDialogP
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

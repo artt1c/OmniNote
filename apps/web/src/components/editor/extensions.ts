@@ -7,6 +7,8 @@ import TaskItem from '@tiptap/extension-task-item'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Markdown } from 'tiptap-markdown'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { Color } from '@tiptap/extension-color'
+import { TextStyle } from '@tiptap/extension-text-style'
 import { common, createLowlight } from 'lowlight'
 import html from 'highlight.js/lib/languages/xml'
 import css from 'highlight.js/lib/languages/css'
@@ -31,14 +33,17 @@ export const getEditorExtensions = (ydoc: Y.Doc, provider: HocuspocusProvider | 
     CodeBlockLowlight.configure({
       lowlight,
     }),
+    TextStyle,
+    Color,
     Markdown.configure({
       html: false,
       transformPastedText: true,
       transformCopiedText: true,
     }),
     Highlight.configure({
+      multicolor: true,
       HTMLAttributes: {
-        class: 'bg-primary/20 text-primary px-1.5 py-0.5 rounded border border-primary/10 tiptap-highlight',
+        class: 'rounded border border-primary/10 px-0.5',
       },
     }),
     TaskList.configure({
