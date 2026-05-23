@@ -16,8 +16,17 @@ export const useYjs = (noteId: string, user: User) => {
   const ydoc = useMemo(() => new Y.Doc(), [])
   const providerRef = useRef<HocuspocusProvider | null>(null)
   const isOnlineRef = useRef(false)
+  const userRef = useRef(user)
 
   const roomName = noteId
+
+  // Update user ref and current awareness field when user changes
+  useEffect(() => {
+    userRef.current = user
+    if (providerRef.current && isOnline) {
+      providerRef.current.setAwarenessField('user', user)
+    }
+  }, [user, isOnline])
 
   useEffect(() => {
     // Don't initialize until we know auth status
@@ -70,7 +79,7 @@ export const useYjs = (noteId: string, user: User) => {
       }
 
       wsProvider.on('connect', () => {
-        wsProvider.setAwarenessField('user', user)
+        wsProvider.setAwarenessField('user', userRef.current)
         setOnline(true)
       })
       wsProvider.on('disconnect', () => setOnline(false))
@@ -99,7 +108,7 @@ export const useYjs = (noteId: string, user: User) => {
       indexeddbProvider.destroy()
       setIsLocalSynced(false)
     }
-  }, [roomName, ydoc, isAuthenticated, token, isAuthLoading, noteId, user])
+  }, [roomName, ydoc, isAuthenticated, token, isAuthLoading, noteId])
 
   return { ydoc, provider: providerRef.current, isOnline, isLocalSynced }
 }

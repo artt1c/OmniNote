@@ -67,6 +67,28 @@ export const getEditorExtensions = (ydoc: Y.Doc, provider: HocuspocusProvider | 
       CollaborationCaret.configure({
         provider: provider,
         user: user,
+        render: (user: any) => {
+          const cursor = document.createElement('span');
+          cursor.classList.add('collaboration-cursor');
+          cursor.style.setProperty('--cursor-color', user.color);
+
+          const caret = document.createElement('span');
+          caret.classList.add('collaboration-cursor__caret');
+          
+          const label = document.createElement('span');
+          label.classList.add('collaboration-cursor__label');
+          label.textContent = user.name;
+
+          cursor.appendChild(caret);
+          cursor.appendChild(label);
+          return cursor;
+        },
+        selectionRender: (user: any) => {
+          return {
+            class: 'collaboration-cursor__selection',
+            style: `background-color: ${user.color}33`,
+          };
+        },
       })
     ] : []),
   ];

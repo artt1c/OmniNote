@@ -19,10 +19,13 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { DocumentSyncIndicator } from './DocumentSyncIndicator';
 import { ShareDocumentButton } from './ShareDocumentButton';
+import { useCollaborators } from '@/context/CollaboratorsContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function AppHeader() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useUser();
+  const { collaborators } = useCollaborators();
 
   const handleLogout = async () => {
     removeAuthCookie();
@@ -46,7 +49,35 @@ export function AppHeader() {
 
       <div className="ml-auto flex items-center gap-4">
         <div className="flex items-center gap-2 empty:hidden">
-
+          {collaborators.length > 0 && (
+            <div className="flex -space-x-2 mr-2">
+              {collaborators.map((col) => {
+                const colSeed = col.name;
+                const colAvatarUrl = col.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${colSeed}`;
+                return (
+                  <Tooltip key={col.clientId}>
+                    <TooltipTrigger asChild>
+                      <Avatar
+                        className="inline-block h-8 w-8 rounded-full border-2 transition-all hover:scale-110 hover:z-10 cursor-default bg-background"
+                        style={{ borderColor: col.color }}
+                      >
+                        <AvatarImage src={colAvatarUrl} alt={col.name} />
+                        <AvatarFallback
+                          className="text-white text-xs font-semibold"
+                          style={{ backgroundColor: col.color }}
+                        >
+                          {col.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="center" className="bg-popover text-popover-foreground border border-border shadow-md">
+                      <p>{col.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          )}
           <ShareDocumentButton />
         </div>
         <div className="flex items-center gap-3">
