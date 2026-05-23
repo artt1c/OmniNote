@@ -19,6 +19,29 @@ export function NoteWorkspace({ documentId }: NoteWorkspaceProps) {
   const { setCollaborators } = useCollaborators();
 
   useEffect(() => {
+    if (!editor || !ydoc || !isLocalSynced) return;
+
+    const fragment = ydoc.getXmlFragment('default');
+    const titleMap = ydoc.getMap('metadata');
+
+    const pendingContent = sessionStorage.getItem(`pending_note_content_${documentId}`);
+    const pendingTitle = sessionStorage.getItem(`pending_note_title_${documentId}`);
+
+    // Set initial content if the document is empty
+    if (fragment.length === 0 && pendingContent) {
+      editor.commands.setContent(pendingContent);
+      sessionStorage.removeItem(`pending_note_content_${documentId}`);
+    }
+
+    // Set initial title if none is set
+    const currentTitle = titleMap.get('title') as string | undefined;
+    if ((!currentTitle || currentTitle === 'Untitled' || currentTitle === '') && pendingTitle) {
+      onTitleChange(pendingTitle);
+      sessionStorage.removeItem(`pending_note_title_${documentId}`);
+    }
+  }, [editor, ydoc, isLocalSynced, documentId, onTitleChange]);
+
+  useEffect(() => {
     const awareness = provider?.awareness;
     if (!awareness) {
       setCollaborators([]);
